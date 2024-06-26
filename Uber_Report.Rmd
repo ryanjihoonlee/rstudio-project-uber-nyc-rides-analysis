@@ -1,0 +1,310 @@
+---
+title: "Exploring Urban Mobility: Insights from Uber Pickups in NYC"
+output: html_document
+date: "2024-06-25"
+---
+
+#### In this R project, I analyzed the Uber Pickups dataset from New York City. The project focused on leveraging the ggplot2 library for comprehensive data visualization and analysis. The primary objective was to gain insights into Uber customers' travel behaviors and preferences based on the dataset's exploration. Through visualizations and exploratory analysis, the project aimed to uncover patterns and trends in Uber service usage, including peak travel times, popular pickup locations, and demographic insights. These findings contribute to a better understanding of urban mobility dynamics and support strategic decision-making for service optimization and customer satisfaction in urban transportation.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(ggthemes)
+library(lubridate)
+library(dplyr)
+library(tidyr)
+library(DT)
+library(scales)
+
+```
+
+#### This vector aims to enhance visual clarity and aesthetic appeal in the presentation of data insights. By defining a cohesive color palette, the project ensures consistency and effectiveness in communicating information through graphical representations.
+
+```{r}
+
+colors <- c("#09091A", "#4A4A4A", "#A8A8A8", "#0090FF", "#2AB27B", "#FFC90E", "#8E44AD")
+
+```
+
+## Data Import
+
+#### This step focuses on reading multiple CSV files containing data spanning from April 2014 to September 2014. Each CSV file corresponds to a specific month and is stored in separate data frames named apr_data, may_data, and so forth. Post the reading process, all individual data frames are consolidated into a unified data frame named 'data'. This consolidation enables comprehensive analysis and exploration of the complete dataset across the specified time period, facilitating in-depth insights and observations from the integrated data.
+
+```{r}
+
+apr_data <- read.csv("/Users/ryanlee/Desktop/R/R Projects/Uber/dataset/uber-raw-data-apr14.csv")
+may_data <- read.csv("/Users/ryanlee/Desktop/R/R Projects/Uber/dataset/uber-raw-data-may14.csv")
+jun_data <- read.csv("/Users/ryanlee/Desktop/R/R Projects/Uber/dataset/uber-raw-data-jun14.csv")
+jul_data <- read.csv("/Users/ryanlee/Desktop/R/R Projects/Uber/dataset/uber-raw-data-jul14.csv")
+aug_data <- read.csv("/Users/ryanlee/Desktop/R/R Projects/Uber/dataset/uber-raw-data-aug14.csv")
+sep_data <- read.csv("/Users/ryanlee/Desktop/R/R Projects/Uber/dataset/uber-raw-data-sep14.csv")
+
+data <- rbind(apr_data, may_data, jun_data, jul_data, aug_data, sep_data)
+  
+data$Date.Time <- as.POSIXct(data$Date.Time, format = "%m/%d/%Y %H:%M:%S")
+
+data$Time <- format(as.POSIXct(data$Date.Time, format = "%m/%d/%Y %H:%M:%S"), format = "%H:%M:%S")
+
+data$Date.Time <- ymd_hms(data$Date.Time)
+
+data$day <- factor(day(data$Date.Time))
+data$month <- factor(month(data$Date.Time, label = TRUE))
+data$year <- factor(year(data$Date.Time))
+data$dayofweek <- factor(wday(data$Date.Time, label = TRUE))
+data$hour <- factor(hour(hms(data$Time)))
+data$minute <- factor(minute(hms(data$Time)))
+data$second <- factor(second(hms(data$Time)))
+
+```
+
+## Hourly Distribution and Month Trends of Uber Trips
+
+### Visualizing Daily Trip Trends
+#### The analysis begins by filtering and grouping the Uber trip data by hour to calculate total trip counts per hour, excluding any missing values. This aggregation, performed with dplyr, results in the creation of the hour_data data frame, which summarizes total trips for each hour of the day. To enhance clarity, the datatable function is used to present the hour_data data frame in a tabular format. Subsequently, ggplot2 is employed to generate a bar chart illustrating the distribution of Uber trips across different hours of the day.
+
+### Analyzing Hourly and Monthly Trends
+#### Building upon the initial visualization, the analysis extends to consider both hourly and monthly trends. By filtering and grouping the data by both month and hour, and excluding missing values, the month_hour data frame is created. This data frame provides a comprehensive summary of trip counts for each hour within each month. Using ggplot2, another bar chart is generated to visualize trip volumes for each hour, with bars color-coded by month.
+
+#### Through these visualizations, significant peaks in trip numbers are observed in the evening around 5:00 and 6:00 PM, indicating high passenger activity during these hours. Additionally, the analysis across different months reveals variations in trip patterns, offering insights into the behavioral trends of Uber passengers in New York City over time.
+
+```{r}
+
+hour_data <- data |> 
+  filter(!is.na(hour)) |> 
+  group_by(hour) |> 
+  summarize(Total = n())
+
+datatable(hour_data)
+
+ggplot(hour_data, aes(hour, Total)) +
+  geom_bar(stat = "identity", fill = "black", color = "blue") +
+  labs(title = "Uber Trips Every Hour", x = "Hour", y = "Total Trips") +
+  theme(element_text(face = "bold"), legend.position = "none") +
+  scale_y_continuous(labels = comma)
+
+month_hour <- data |> 
+  filter(!is.na(month) & !is.na(hour)) |> 
+  group_by(month, hour) |> 
+  summarize(Total = n())
+
+ggplot(month_hour, aes(hour, Total, fill = month)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Uber Trips by Hour and Month", x = "Hour", y = "Total Trips") +
+  theme(element_text(face = "bold")) +
+  scale_y_continuous(labels = comma)
+
+```
+
+## Daily Distribution and Monthly Trends of Uber Trips
+
+### Daily Trip Patterns Visualization
+#### The analysis begins by filtering and grouping Uber trip data by day to calculate total trip counts per day. This initial aggregation using dplyr generates the day_group data frame, presenting a comprehensive summary of daily trip volumes. To facilitate clear interpretation, the day_group data frame is displayed in tabular format using the datatable function. Subsequently, ggplot2 is utilized to create a bar chart illustrating the distribution of Uber trips across different days of the month. This visualization identifies trends or peaks in trip volumes on specific days, offering insights into user behavior and demand patterns over time.
+
+### Exploring Day-Month Relationships
+#### To deepen the analysis, further investigation focuses on the relationship between days and months. By filtering and grouping data by both month and day, the day_month_group data frame is constructed. This data frame provides a detailed overview of trip counts for each day within each month. Using ggplot2, the analysis is enriched with a stacked bar chart that visualizes Uber trip distributions across days, color-coded by month. This visual representation highlights variations in trip patterns across different months, revealing seasonal or monthly trends in trip volumes.
+
+#### The analysis uncovers a significant insight: consistently, the 30th of each month exhibits the highest number of Uber trips throughout the year. This trend is particularly pronounced in April, contributing substantially to the overall yearly data. Understanding such patterns enables better anticipation of peak demand periods and supports strategic decision-making for optimizing service operations and enhancing user satisfaction.
+
+```{r}
+
+day_group <- data |> 
+  filter(!is.na(day)) |> 
+  group_by(day) |> 
+  summarize(Total = n()) 
+
+datatable(day_group)
+
+ggplot(day_group, aes(day, Total)) +
+  geom_bar(stat = "identity", fill = "black") + 
+  labs(title = "Uber Trips Every Day", x = "Day", y = "Total Trips") +
+  theme(element_text(face = "bold"), legend.position = "none") +
+  scale_y_continuous(labels = comma)
+
+day_month_group <- data |> 
+  filter(!is.na(month) & !is.na(day)) |> 
+  group_by(month, day) |> 
+  summarize(Total = n())
+
+ggplot(day_month_group, aes(day, Total, fill = month)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Uber Trips by Day and Month", x = "Day", y = "Total Trips") +
+  theme(element_text(face = "bold")) +
+  scale_y_continuous(labels = comma) + 
+  scale_fill_manual(values = colors)
+
+```
+
+## Monthly Distribution and Annual Trends of Uber Trips
+
+### Monthly and Weekly Trip Distribution Analysis
+#### The analysis begins with examining the distribution of Uber trips across months and days of the week. The month_group dataset underwent meticulous processing to exclude any missing values in the month and dayofweek columns. Using grouping and summarization techniques, the total number of trips for each month and day of the week combination was computed. Visualized with a grouped bar chart, this presentation distinguishes monthly trends and showcases variations in trip patterns across different days of the week, providing valuable insights into passenger behavior over time.
+
+#### The analysis reveals a significant peak in trip frequency during September, highlighted in the visual representation of monthly trip counts. Additionally, detailed visual reports illustrate the distribution of trips across each day of the week, providing insights into variations in passenger demand and behavior over different time intervals.
+
+```{r}
+
+month_group <- data |>
+  filter(!is.na(month)) |>
+  group_by(month) |> 
+  summarize(Total = n())
+
+datatable(month_group)
+
+ggplot(month_group, aes(month, Total, fill = month)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Uber Trips by Month", x = "Month", y = "Total Trips") + 
+  theme(element_text(face = "bold"), legend.position = "none") +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = colors)
+
+month_weekday <- data |>
+  filter(!is.na(month) & !is.na(dayofweek)) |>
+  group_by(month, dayofweek) |> 
+  summarize(Total = n())
+
+ggplot(month_weekday, aes(month, Total, fill = dayofweek)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Uber Trips by Day and Month", x = "Month", y = "Total Trips") +
+  theme(element_text(face = "bold")) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = colors)
+
+```
+
+## Trip Counts by Bases
+
+### Analyzing Trip Distribution Across Bases
+#### To begin, a bar chart was generated to illustrate the distribution of Uber trips across the five bases. Utilizing the data dataset, the total number of trips for each base was aggregated and visualized. This visualization provides a comprehensive overview of trip volumes originating from each base, highlighting Base B02617 with the highest number of trips observed.
+
+### Monthly Variation of Uber Trips Across Bases
+#### Delving deeper into monthly variations, ggplot2 was used to create a grouped bar chart illustrating how trip volumes vary by base and month. Each bar in the chart represents trips from a specific base, color-coded by month using a predefined color scheme. This visualization not only outlines the distribution of trips across bases but also identifies monthly trends, revealing which months show higher or lower activity from each base.
+
+### Weekly Variation of Uber Trips Across Bases
+#### Further expanding the analysis, another grouped bar chart was generated using ggplot2 to visualize weekly variations in trip volumes across bases. Bars were color-coded by the day of the week to highlight the busiest days for Uber trips originating from each base. Thursdays emerged as particularly active days across bases B02598, B02617, and B02682.
+
+#### Throughout the analysis, Base B02617 consistently stood out with the highest overall trip volumes and recorded the highest number of trips within a single month. Thursdays consistently showed the highest trip volumes across multiple bases, indicating a significant weekday pattern in Uber trip activity.
+
+```{r} 
+
+ggplot(data, aes(Base)) +
+  geom_bar(fill = "black") +
+  labs(title = "Uber Trips by Bases", x = "Base") +
+  theme(element_text(face = "bold")) +
+  scale_y_continuous(labels = comma)
+
+ggplot(data, aes(Base, fill = month)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Uber Trips by Bases and Month", x = "Base") +
+  theme(element_text(face = "bold")) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = colors)
+
+ggplot(data, aes(Base, fill = dayofweek)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Uber Trips by Bases and Day of Week", x = "Base") +
+  theme(element_text(face = "bold")) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = colors)
+
+```
+
+## Heatmap of Day, Hour, and Month Trends
+
+### Distribution of Uber Trips Across Days and Hours
+#### To begin, the distribution of Uber trips across days and hours was analyzed using a heatmap visualization. The day_and_hour dataset was processed to filter out any missing values in the day and hour columns. Aggregating the data computed the total number of trips for each day-hour combination, presented in a tabular format using the datatable function. Using ggplot2, a heatmap was created to visualize the total trips for each day-hour combination, providing insights into peak and off-peak hours across different days.
+
+### Interaction Between Months and Days
+#### Exploring further, the interaction between months and days was visualized using another heatmap. The day_month_group dataset summarized trip counts across different months and days, highlighting daily variations within each month.
+
+### Relationship Between Months and Days of the Week
+#### A heatmap visualization was employed to investigate the relationship between months and days of the week. The month_weekday dataset provided a comprehensive view of trip patterns across different months and days of the week, illustrating variations in travel behavior over the course of a week.
+
+### Distribution of Uber Trips Across Bases and Months
+#### Analyzing the spatial-temporal distribution of Uber trips, another heatmap was generated to visualize trip counts across different bases and months using the month_base dataset. This visualization offered insights into how Uber activities vary across different locations over time.
+
+### Uber Trip Volumes Across Bases and Days of the Week
+#### Finally, a heatmap was used to examine Uber trip volumes across different bases and days of the week. The dayofweek_bases dataset summarized trip counts by base and day of the week, revealing patterns in daily activities across various Uber bases.
+
+#### Through these detailed visualizations, significant insights into the temporal dynamics of Uber trip patterns were uncovered. Understanding peak hours, daily and monthly variations, and base-specific travel behaviors is crucial for effective operational planning and strategic decision-making in urban transportation management.
+
+```{r}
+
+day_and_hour <- data |>
+  filter(!is.na(day) & !is.na(hour)) |>
+  group_by(day, hour) |> 
+  summarize(Total = n())
+
+datatable(day_and_hour)
+
+ggplot(day_and_hour, aes(day, hour, fill = Total)) +
+  geom_tile(color = "white") +
+  labs(title = "Heat Map by Hour and Day", x = "Day", y = "Hour") +
+  theme(element_text(face = "bold"))
+
+ggplot(day_month_group, aes(day, month, fill = Total)) +
+  geom_tile(color = "white") +
+  labs(title = "Heat Map by Month and Day", x = "Day", y = "Month") +
+  theme(element_text(face = "bold"))
+
+ggplot(month_weekday, aes(dayofweek, month, fill = Total)) +
+  geom_tile(color = "white") +
+  labs(title = "Heat Map by Month and Day of Week", x = "Day of Week", y = "Month") +
+  theme(element_text(face = "bold"))
+
+month_base <- data |>
+  filter(!is.na(Base) & !is.na(month)) |>
+  group_by(Base, month) |> 
+  summarize(Total = n())
+
+dayofweek_bases <- data |> 
+  filter(!is.na(Base) & !is.na(dayofweek)) |> 
+  group_by(Base, dayofweek) |> 
+  summarize(Total = n())
+
+ggplot(month_base, aes(Base, month, fill = Total)) +
+  geom_tile(color = "white") +
+  labs(title = "Heat Map by Month and Bases", y = "Month") +
+  theme(element_text(face = "bold"))
+
+ggplot(dayofweek_bases, aes(Base, dayofweek, fill = Total)) +
+  geom_tile(color = "white") +
+  labs(title = "Heat Map by Bases and Day of Week", y = "Day of Week") +
+  theme(element_text(face = "bold"))
+
+```
+
+## Map Visualizations of Rides in New York City
+
+### Mapping Uber Ride Density Across New York City
+#### To begin, a geo-plot was created using ggplot2 to map the geographic coordinates of all Uber rides. The data dataset was utilized to plot each ride as a point on the map, providing a visual representation of ride density and distribution across the city. This visualization offers insights into the spatial distribution of Uber rides throughout New York City, highlighting areas with higher ride activity and potential geographic trends.
+
+### Geospatial Analysis of Uber Rides by Bases
+#### Refining the analysis, another geo-plot was generated to visualize Uber rides categorized by different bases. Using the data_2014 dataset, rides were plotted with each point color-coded according to its originating base. This visualization facilitates a comparative analysis of ride patterns among bases, highlighting spatial variations in ride origins across different Uber bases in New York City.
+
+#### Through these geospatial visualizations, valuable insights into the geographic dynamics of Uber ride patterns during the specified period were gained. By mapping ride data, high-traffic areas can be identified, base-specific ride densities assessed, and potential spatial correlations between ride activity and urban demographics explored. Leveraging geospatial analysis techniques, the project provides a comprehensive exploration of Uber ride patterns in New York City, offering practical insights for urban transportation planning and strategic decision-making.
+
+```{r}
+
+min_lat <- 40.5774
+max_lat <- 40.9176
+min_long <- -74.15
+max_long <- -73.7004
+
+ggplot(data, aes(x = Lon, y = Lat)) +
+  geom_point(size = 1, color = "blue") +
+  labs(title = "NYC Map Based on Uber Rides During 2014 (Apr-Sep)") +
+  theme(element_text(face = "bold")) +
+  scale_x_continuous(limits = c(min_long, max_long)) +
+  scale_y_continuous(limits = c(min_lat, max_lat)) +
+  theme_map()
+
+ggplot(data, aes(x = Lon, y = Lat, color = Base)) + 
+  geom_point(size = 1) +
+  labs(title = "NYC Map Based on Uber Rides During 2014 (Apr-Sep) by Base") +
+  theme(element_text(face = "bold")) +
+  scale_x_continuous(limits = c(min_long, max_long)) +
+  scale_y_continuous(limits = c(min_lat, max_lat)) +
+  theme_map()
+
+```
