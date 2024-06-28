@@ -1,13 +1,22 @@
 # Exploring Urban Mobility: Insights from Uber Pickups in NYC
 
-## Description
-Understanding customer behaviors and preferences is crucial for optimizing urban mobility services. This project analyzes the Uber Pickups dataset from New York City, using the ggplot2 library for data visualization and analysis. Its primary objective is to uncover insights into Uber customers' travel patterns and behaviors, facilitating strategic decision-making to enhance service and customer satisfaction.
+## Overview
+This project focuses on analyzing Uber Pickups in New York City, using the ggplot2 library for data visualization. The goal is to understand customer behavior and trip patterns through visual storytelling, providing insights into complex data for better decision-making.
 
-The analysis begins with exploratory data analysis, focusing on key metrics such as peak travel times, popular pickup locations across boroughs, and demographic insights of Uber customers. This exploration provides a comprehensive overview of urban mobility dynamics, revealing trends that influence service demand and operational efficiency.
+## Objective 
+The primary goal is to implement ggplot2 and other essential R libraries to analyze and visualize Uber pickups, developing skills in data visualization and gaining insights into Uber's operational data.
 
-Using a dataset enriched with spatial and temporal variables, the analysis employs geospatial mapping and interactive visualizations to highlight Uber pickup hotspots and travel density. By segmenting the data and analyzing trends over time, the project identifies patterns in user behavior and service utilization, offering actionable insights for optimizing resource allocation and improving service delivery.
+## Tools
+The analysis was conducted using the R programming language, utilizing various statistical and data visualization tools.
 
-This project enhances understanding of urban transportation dynamics and supports strategic decisions aimed at improving service quality and customer experience. The findings and recommendations can inform future urban mobility strategies, fostering efficiency and satisfaction among Uber customers in New York City.
+Packages used:
+#### ggplot2
+#### ggthemes
+#### lubridate
+#### dplyr
+#### tidyr
+#### DT
+#### scales
 
 ## Dataset
 The dataset utilized in this project comprises Uber pickup records spanning from April 2014 to September 2014 in New York City. It includes detailed information such as timestamps of each trip, geographic coordinates (latitude and longitude) of pickup locations, bases where trips originated, and possibly additional variables like trip duration or customer demographics (if available).
